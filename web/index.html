@@ -1,100 +1,172 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mini JSONPlaceholder</title>
-    <link rel="stylesheet" href="stile.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="stile.css" />
+  </head>
+  <body>
     <!-- ======================================================
          Header
          ====================================================== -->
     <header>
-        <div class="contenitore">
-            <h1>Mini JSONPlaceholder</h1>
-            <p>Frontend per le nostre API REST</p>
-        </div>
+      <div class="contenitore">
+        <h1>Mini JSONPlaceholder</h1>
+        <p>Frontend per le nostre API REST</p>
+      </div>
     </header>
 
     <div class="contenitore">
-
-        <!-- ==================================================
+      <!-- ==================================================
              Navigazione
              ================================================== -->
-        <nav>
-            <button id="nav-utenti" class="attivo">Utenti</button>
-            <button id="nav-post">Post</button>
-            <button id="nav-commenti">Commenti</button>
-        </nav>
+      <nav>
+        <button id="nav-utenti" class="attivo">Utenti</button>
+        <button id="nav-post">Post</button>
+        <button id="nav-commenti">Commenti</button>
+      </nav>
+      <div id="statistiche"></div>
 
-        <!-- ==================================================
+      <!-- ==================================================
              Sezione Utenti
              ================================================== -->
-        <section id="sezione-utenti">
-            <h2>Utenti</h2>
+      <section id="sezione-utenti">
+        <h2>Utenti</h2>
 
-            <form id="form-utente">
-                <h3>Nuovo Utente</h3>
-                <label for="utente-nome">Nome</label>
-                <input type="text" id="utente-nome" placeholder="Es. Yoshi Verde" required>
-                <label for="utente-email">Email</label>
-                <input type="email" id="utente-email" placeholder="Es. yoshi@email.com" required>
-                <label for="utente-citta">Citta (opzionale)</label>
-                <input type="text" id="utente-citta" placeholder="Es. Isola Yoshi">
-                <button type="submit">Crea Utente</button>
-            </form>
+        <form id="form-utente">
+          <h3>Nuovo Utente</h3>
+          <label for="utente-nome">Nome</label>
+          <input
+            type="text"
+            id="utente-nome"
+            placeholder="Es. Yoshi Verde"
+            required
+          />
+          <label for="utente-email">Email</label>
+          <input
+            type="email"
+            id="utente-email"
+            placeholder="Es. yoshi@email.com"
+            required
+          />
+          <label for="utente-citta">Citta (opzionale)</label>
+          <input type="text" id="utente-citta" placeholder="Es. Isola Yoshi" />
+          <label for="utente-cf">Codice Fiscale</label>
+          <input
+            type="text"
+            id="utente-cf"
+            placeholder="Es. RSSMRA90A01H501A"
+            pattern="^[A-Za-z]{6}[0-9]{2}[A-Za-z][0-9]{2}[A-Za-z][0-9]{3}[A-Za-z]$"
+            maxlength="16"
+            required
+          />
+          <label for="utente-sesso">Sesso</label>
+          <select id="utente-sesso" required>
+            <option value="">-- Seleziona --</option>
+            <option value="M">Maschio</option>
+            <option value="F">Femmina</option>
+            <option value="Altro">Altro</option>
+          </select>
+          <label for="utente-data-nascita">Data di Nascita (opzionale)</label>
+          <input type="date" id="utente-data-nascita" />
+          <label for="utente-telefono">Telefono (opzionale)</label>
+          <input type="tel" id="utente-telefono" placeholder="Es. +39 06 1234567" />
+          <button type="submit">Crea Utente</button>
+          <button
+            type="button"
+            id="btn-annulla-modifica"
+            class="btn-pericolo"
+            style="display: none"
+          >
+            Annulla
+          </button>
+        </form>
+        <div class="box-ricerca">
+          <h2>ricerca untenti</h2>
+          <input
+            type="text"
+            id="ricerca-utenti"
+            placeholder="Cerca utenti..."
+          />
+        </div>
 
-            <div id="lista-utenti"></div>
-        </section>
+        <div id="lista-utenti"></div>
+      </section>
 
-        <!-- ==================================================
+      <!-- ==================================================
              Sezione Post
              ================================================== -->
-        <section id="sezione-post" class="nascosta">
-            <div id="breadcrumb-post" class="breadcrumb"></div>
-            <h2 id="titolo-post">Post</h2>
+      <section id="sezione-post" class="nascosta">
+        <div id="breadcrumb-post" class="breadcrumb"></div>
+        <h2 id="titolo-post">Post</h2>
 
-            <form id="form-post">
-                <h3>Nuovo Post</h3>
-                <label for="post-userId">User ID</label>
-                <input type="number" id="post-userId" placeholder="Es. 1" required>
-                <label for="post-titolo">Titolo</label>
-                <input type="text" id="post-titolo" placeholder="Es. Il mio primo post" required>
-                <label for="post-corpo">Corpo</label>
-                <textarea id="post-corpo" placeholder="Scrivi il contenuto del post..." required></textarea>
-                <button type="submit">Crea Post</button>
-            </form>
+        <form id="form-post">
+          <h3>Nuovo Post</h3>
+          <label for="post-userId">User ID</label>
+          <input type="number" id="post-userId" placeholder="Es. 1" required />
+          <label for="post-titolo">Titolo</label>
+          <input
+            type="text"
+            id="post-titolo"
+            placeholder="Es. Il mio primo post"
+            required
+          />
+          <label for="post-corpo">Corpo</label>
+          <textarea
+            id="post-corpo"
+            placeholder="Scrivi il contenuto del post..."
+            required
+          ></textarea>
+          <button type="submit">Crea Post</button>
+        </form>
 
-            <div id="lista-post"></div>
-        </section>
+        <div id="lista-post"></div>
+      </section>
 
-        <!-- ==================================================
+      <!-- ==================================================
              Sezione Commenti
              ================================================== -->
-        <section id="sezione-commenti" class="nascosta">
-            <div id="breadcrumb-commenti" class="breadcrumb"></div>
-            <h2 id="titolo-commenti">Commenti</h2>
+      <section id="sezione-commenti" class="nascosta">
+        <div id="breadcrumb-commenti" class="breadcrumb"></div>
+        <h2 id="titolo-commenti">Commenti</h2>
 
-            <form id="form-commento">
-                <h3>Nuovo Commento</h3>
-                <label for="commento-postId">Post ID</label>
-                <input type="number" id="commento-postId" placeholder="Es. 1" required>
-                <label for="commento-nome">Nome</label>
-                <input type="text" id="commento-nome" placeholder="Es. Mario Rossi" required>
-                <label for="commento-email">Email</label>
-                <input type="email" id="commento-email" placeholder="Es. mario@email.com" required>
-                <label for="commento-corpo">Corpo</label>
-                <textarea id="commento-corpo" placeholder="Scrivi il commento..." required></textarea>
-                <button type="submit">Crea Commento</button>
-            </form>
+        <form id="form-commento">
+          <h3>Nuovo Commento</h3>
+          <label for="commento-postId">Post ID</label>
+          <input
+            type="number"
+            id="commento-postId"
+            placeholder="Es. 1"
+            required
+          />
+          <label for="commento-nome">Nome</label>
+          <input
+            type="text"
+            id="commento-nome"
+            placeholder="Es. Mario Rossi"
+            required
+          />
+          <label for="commento-email">Email</label>
+          <input
+            type="email"
+            id="commento-email"
+            placeholder="Es. mario@email.com"
+            required
+          />
+          <label for="commento-corpo">Corpo</label>
+          <textarea
+            id="commento-corpo"
+            placeholder="Scrivi il commento..."
+            required
+          ></textarea>
+          <button type="submit">Crea Commento</button>
+        </form>
 
-            <div id="lista-commenti"></div>
-        </section>
-
+        <div id="lista-commenti"></div>
+      </section>
     </div>
 
     <script type="module" src="js/app.js"></script>
-</body>
+  </body>
 </html>

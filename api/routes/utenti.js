@@ -7,8 +7,12 @@
 
 import { Router } from "express";
 import {
-    trovaUtenti, trovaUtentePerId, creaUtente,
-    sostituisciUtente, aggiornaUtente, eliminaUtente
+  trovaUtenti,
+  trovaUtentePerId,
+  creaUtente,
+  sostituisciUtente,
+  aggiornaUtente,
+  eliminaUtente,
 } from "../database/queries/utenti.js";
 
 const router = Router();
@@ -22,14 +26,14 @@ const router = Router();
 // Adesso (MySQL):   SELECT * FROM utenti WHERE LOWER(citta) = LOWER(?)
 
 router.get("/", async (req, res) => {
-    try {
-        const { citta } = req.query;
-        const risultato = await trovaUtenti(citta);
-        res.json(risultato);
-    } catch (errore) {
-        console.error("Errore GET /api/utenti:", errore);
-        res.status(500).json({ errore: "Errore interno del server" });
-    }
+  try {
+    const { citta } = req.query;
+    const risultato = await trovaUtenti(citta);
+    res.json(risultato);
+  } catch (errore) {
+    console.error("Errore GET /api/utenti:", errore);
+    res.status(500).json({ errore: "Errore interno del server" });
+  }
 });
 
 // ============================================================
@@ -40,21 +44,21 @@ router.get("/", async (req, res) => {
 // Adesso (MySQL):   SELECT * FROM utenti WHERE id = ?
 
 router.get("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const utente = await trovaUtentePerId(id);
+  try {
+    const id = parseInt(req.params.id);
+    const utente = await trovaUtentePerId(id);
 
-        if (!utente) {
-            return res.status(404).json({
-                errore: `Utente con id ${id} non trovato`
-            });
-        }
-
-        res.json(utente);
-    } catch (errore) {
-        console.error("Errore GET /api/utenti/:id:", errore);
-        res.status(500).json({ errore: "Errore interno del server" });
+    if (!utente) {
+      return res.status(404).json({
+        errore: `Utente con id ${id} non trovato`,
+      });
     }
+
+    res.json(utente);
+  } catch (errore) {
+    console.error("Errore GET /api/utenti/:id:", errore);
+    res.status(500).json({ errore: "Errore interno del server" });
+  }
 });
 
 // ============================================================
@@ -68,21 +72,22 @@ router.get("/:id", async (req, res) => {
 //                   L'id viene generato da AUTO_INCREMENT
 
 router.post("/", async (req, res) => {
-    try {
-        const { nome, email, citta } = req.body;
+  try {
+    const { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono } =
+      req.body;
 
-        if (!nome || !email) {
-            return res.status(400).json({
-                errore: "I campi 'nome' e 'email' sono obbligatori"
-            });
-        }
-
-        const nuovoUtente = await creaUtente({ nome, email, citta });
-        res.status(201).json(nuovoUtente);
-    } catch (errore) {
-        console.error("Errore POST /api/utenti:", errore);
-        res.status(500).json({ errore: "Errore interno del server" });
+    if (!nome || !email || !codiceFiscale || !sesso) {
+      return res.status(400).json({
+        errore: "I campi 'nome', 'email', 'codiceFiscale' e 'sesso' sono obbligatori",
+      });
     }
+
+    const nuovoUtente = await creaUtente({ nome, email, citta, codiceFiscale, sesso, dataNascita, telefono });
+    res.status(201).json(nuovoUtente);
+  } catch (errore) {
+    console.error("Errore POST /api/utenti:", errore);
+    res.status(500).json({ errore: "Errore interno del server" });
+  }
 });
 
 // ============================================================
@@ -94,29 +99,29 @@ router.post("/", async (req, res) => {
 // Adesso (MySQL):   UPDATE utenti SET nome=?, email=?, citta=? WHERE id=?
 
 router.put("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const { nome, email, citta } = req.body;
+  try {
+    const id = parseInt(req.params.id);
+    const { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono } = req.body;
 
-        if (!nome || !email) {
-            return res.status(400).json({
-                errore: "I campi 'nome' e 'email' sono obbligatori"
-            });
-        }
-
-        const aggiornato = await sostituisciUtente(id, { nome, email, citta });
-
-        if (!aggiornato) {
-            return res.status(404).json({
-                errore: `Utente con id ${id} non trovato`
-            });
-        }
-
-        res.json(aggiornato);
-    } catch (errore) {
-        console.error("Errore PUT /api/utenti/:id:", errore);
-        res.status(500).json({ errore: "Errore interno del server" });
+    if (!nome || !email || !codiceFiscale || !sesso) {
+      return res.status(400).json({
+        errore: "I campi 'nome', 'email', 'codiceFiscale' e 'sesso' sono obbligatori",
+      });
     }
+
+    const aggiornato = await sostituisciUtente(id, { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono });
+
+    if (!aggiornato) {
+      return res.status(404).json({
+        errore: `Utente con id ${id} non trovato`,
+      });
+    }
+
+    res.json(aggiornato);
+  } catch (errore) {
+    console.error("Errore PUT /api/utenti/:id:", errore);
+    res.status(500).json({ errore: "Errore interno del server" });
+  }
 });
 
 // ============================================================
@@ -128,23 +133,23 @@ router.put("/:id", async (req, res) => {
 // Adesso (MySQL):   UPDATE utenti SET <campo>=? WHERE id=? (query dinamica)
 
 router.patch("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const { nome, email, citta } = req.body;
+  try {
+    const id = parseInt(req.params.id);
+    const { nome, email, citta } = req.body;
 
-        const utente = await aggiornaUtente(id, { nome, email, citta });
+    const utente = await aggiornaUtente(id, { nome, email, citta });
 
-        if (!utente) {
-            return res.status(404).json({
-                errore: `Utente con id ${id} non trovato`
-            });
-        }
-
-        res.json(utente);
-    } catch (errore) {
-        console.error("Errore PATCH /api/utenti/:id:", errore);
-        res.status(500).json({ errore: "Errore interno del server" });
+    if (!utente) {
+      return res.status(404).json({
+        errore: `Utente con id ${id} non trovato`,
+      });
     }
+
+    res.json(utente);
+  } catch (errore) {
+    console.error("Errore PATCH /api/utenti/:id:", errore);
+    res.status(500).json({ errore: "Errore interno del server" });
+  }
 });
 
 // ============================================================
@@ -158,21 +163,21 @@ router.patch("/:id", async (req, res) => {
 // vengono eliminati automaticamente anche i suoi post e commenti.
 
 router.delete("/:id", async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        const rimosso = await eliminaUtente(id);
+  try {
+    const id = parseInt(req.params.id);
+    const rimosso = await eliminaUtente(id);
 
-        if (!rimosso) {
-            return res.status(404).json({
-                errore: `Utente con id ${id} non trovato`
-            });
-        }
-
-        res.json({ messaggio: "Utente eliminato", utente: rimosso });
-    } catch (errore) {
-        console.error("Errore DELETE /api/utenti/:id:", errore);
-        res.status(500).json({ errore: "Errore interno del server" });
+    if (!rimosso) {
+      return res.status(404).json({
+        errore: `Utente con id ${id} non trovato`,
+      });
     }
+
+    res.json({ messaggio: "Utente eliminato", utente: rimosso });
+  } catch (errore) {
+    console.error("Errore DELETE /api/utenti/:id:", errore);
+    res.status(500).json({ errore: "Errore interno del server" });
+  }
 });
 
 export default router;
