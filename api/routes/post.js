@@ -22,8 +22,12 @@ const router = Router();
 
 router.get("/", async (req, res) => {
     try {
-        const { userId } = req.query;
-        const risultato = await trovaPost(userId ? parseInt(userId) : undefined);
+        const { userId, pagina, limite } = req.query;
+        const risultato = await trovaPost(
+            userId ? parseInt(userId) : undefined,
+            pagina  ? parseInt(pagina)  : undefined,
+            limite  ? parseInt(limite)  : undefined,
+        );
         res.json(risultato);
     } catch (errore) {
         console.error("Errore GET /api/post:", errore);

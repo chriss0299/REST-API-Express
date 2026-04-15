@@ -194,6 +194,36 @@ section h2 {
     background: #e2e8f0;
 }
 
+.paginazione {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.paginazione button {
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--raggio);
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.paginazione button:hover:not(:disabled) {
+    background: #e2e8f0;
+}
+
+.paginazione button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.paginazione span {
+    color: var(--colore-testo-secondario);
+    font-size: 0.875rem;
+}
+
 /* ============================================================
    Form
    ============================================================ */

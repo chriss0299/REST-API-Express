@@ -14,17 +14,41 @@ import pool from "../connessione.js";
  * SQL senza filtro:  SELECT * FROM post
  * SQL con filtro:    SELECT * FROM post WHERE userId = ?
  */
-export async function trovaPost(userId) {
-    if (userId) {
-        const [righe] = await pool.query(
-            "SELECT * FROM post WHERE userId = ?",
-            [userId]
-        );
-        return righe;
-    }
+export async function trovaPost(userId, pagina, limite) {
+  const whereClause = userId ? "WHERE userId = ?" : "";
+  const params = userId ? [userId] : [];
 
-    const [righe] = await pool.query("SELECT * FROM post");
+  // Senza paginazione — retrocompatibile (restituisce array diretto)
+  if (!pagina || !limite) {
+    const [righe] = await pool.query(
+      `SELECT * FROM post ${whereClause}`,
+      params,
+    );
     return righe;
+  }
+
+  // Con paginazione — restituisce { dati, meta }
+  const [[{ totale }]] = await pool.query(
+    `SELECT COUNT(*) as totale FROM post ${whereClause}`,
+    params,
+  );
+
+  const offset = (pagina - 1) * limite;
+
+  const [righe] = await pool.query(
+    `SELECT * FROM post ${whereClause} LIMIT ? OFFSET ?`,
+    [...params, limite, offset],
+  );
+
+  return {
+    dati: righe,
+    meta: {
+      pagina,
+      limite,
+      totale,
+      pagine: Math.ceil(totale / limite),
+    },
+  };
 }
 
 /**
@@ -33,11 +57,8 @@ export async function trovaPost(userId) {
  * SQL: SELECT * FROM post WHERE id = ?
  */
 export async function trovaPostPerId(id) {
-    const [righe] = await pool.query(
-        "SELECT * FROM post WHERE id = ?",
-        [id]
-    );
-    return righe[0];
+  const [righe] = await pool.query("SELECT * FROM post WHERE id = ?", [id]);
+  return righe[0];
 }
 
 // ============================================================
@@ -50,12 +71,12 @@ export async function trovaPostPerId(id) {
  * SQL: INSERT INTO post (userId, titolo, corpo) VALUES (?, ?, ?)
  */
 export async function creaPost({ userId, titolo, corpo }) {
-    const [risultato] = await pool.query(
-        "INSERT INTO post (userId, titolo, corpo) VALUES (?, ?, ?)",
-        [userId, titolo, corpo]
-    );
+  const [risultato] = await pool.query(
+    "INSERT INTO post (userId, titolo, corpo) VALUES (?, ?, ?)",
+    [userId, titolo, corpo],
+  );
 
-    return { id: risultato.insertId, userId, titolo, corpo };
+  return { id: risultato.insertId, userId, titolo, corpo };
 }
 
 // ============================================================
@@ -68,13 +89,13 @@ export async function creaPost({ userId, titolo, corpo }) {
  * SQL: UPDATE post SET userId = ?, titolo = ?, corpo = ? WHERE id = ?
  */
 export async function sostituisciPost(id, { userId, titolo, corpo }) {
-    const [risultato] = await pool.query(
-        "UPDATE post SET userId = ?, titolo = ?, corpo = ? WHERE id = ?",
-        [userId, titolo, corpo, id]
-    );
+  const [risultato] = await pool.query(
+    "UPDATE post SET userId = ?, titolo = ?, corpo = ? WHERE id = ?",
+    [userId, titolo, corpo, id],
+  );
 
-    if (risultato.affectedRows === 0) return null;
-    return { id, userId, titolo, corpo };
+  if (risultato.affectedRows === 0) return null;
+  return { id, userId, titolo, corpo };
 }
 
 /**
@@ -83,26 +104,26 @@ export async function sostituisciPost(id, { userId, titolo, corpo }) {
  * SQL dinamico: UPDATE post SET <campo> = ?, ... WHERE id = ?
  */
 export async function aggiornaPost(id, dati) {
-    const campiPermessi = ["userId", "titolo", "corpo"];
-    const aggiornamenti = [];
-    const valori = [];
+  const campiPermessi = ["userId", "titolo", "corpo"];
+  const aggiornamenti = [];
+  const valori = [];
 
-    for (const campo of campiPermessi) {
-        if (dati[campo] !== undefined) {
-            aggiornamenti.push(`${campo} = ?`);
-            valori.push(dati[campo]);
-        }
+  for (const campo of campiPermessi) {
+    if (dati[campo] !== undefined) {
+      aggiornamenti.push(`${campo} = ?`);
+      valori.push(dati[campo]);
     }
+  }
 
-    if (aggiornamenti.length > 0) {
-        valori.push(id);
-        await pool.query(
-            `UPDATE post SET ${aggiornamenti.join(", ")} WHERE id = ?`,
-            valori
-        );
-    }
+  if (aggiornamenti.length > 0) {
+    valori.push(id);
+    await pool.query(
+      `UPDATE post SET ${aggiornamenti.join(", ")} WHERE id = ?`,
+      valori,
+    );
+  }
 
-    return trovaPostPerId(id);
+  return trovaPostPerId(id);
 }
 
 // ============================================================
@@ -115,9 +136,9 @@ export async function aggiornaPost(id, dati) {
  * SQL: DELETE FROM post WHERE id = ?
  */
 export async function eliminaPost(id) {
-    const post = await trovaPostPerId(id);
-    if (!post) return null;
+  const post = await trovaPostPerId(id);
+  if (!post) return null;
 
-    await pool.query("DELETE FROM post WHERE id = ?", [id]);
-    return post;
+  await pool.query("DELETE FROM post WHERE id = ?", [id]);
+  return post;
 }

@@ -12,6 +12,8 @@ import * as ui from "./ui.js";
 let utenteSelezionato = null; // { id, nome }
 let postSelezionato = null; // { id, titolo }
 let utenteInModifica = null; // {uttente selezionato per la modifica}
+let paginaAttuale = 1;
+const LIMITE_POST = 5;
 
 // ============================================================
 // Riferimenti DOM
@@ -68,7 +70,7 @@ navBottoni.post.addEventListener("click", async () => {
   titoli.post.textContent = "Post";
   document.getElementById("post-userId").value = "";
   mostraSezione("post");
-  await caricaPost();
+  await caricaPost(undefined, 1);
 });
 
 navBottoni.commenti.addEventListener("click", async () => {
@@ -97,16 +99,41 @@ async function caricaUtenti() {
   }
 }
 
-async function caricaPost(userId) {
+async function caricaPost(userId, pagina = 1) {
+  paginaAttuale = pagina;
   try {
-    const post = await api.ottieniPost(userId);
+    const risposta = await api.ottieniPost(userId, pagina, LIMITE_POST);
+    const post = risposta.dati ?? risposta;
     ui.mostraPost(post, liste.post, {
       onVediCommenti: vediCommentiDiPost,
       onElimina: eliminaPost,
     });
+    aggiornaPaginazione(risposta.meta, userId);
   } catch (err) {
     ui.mostraErrore(err.message, liste.post);
   }
+}
+
+function aggiornaPaginazione(meta, userId) {
+  const contenitore = document.getElementById("paginazione-post");
+  contenitore.innerHTML = "";
+
+  if (!meta || meta.pagine <= 1) return;
+
+  const btnPrec = document.createElement("button");
+  btnPrec.textContent = "← Precedente";
+  btnPrec.disabled = meta.pagina <= 1;
+  btnPrec.addEventListener("click", () => caricaPost(userId, meta.pagina - 1));
+
+  const info = document.createElement("span");
+  info.textContent = `Pagina ${meta.pagina} di ${meta.pagine}`;
+
+  const btnSucc = document.createElement("button");
+  btnSucc.textContent = "Successiva →";
+  btnSucc.disabled = meta.pagina >= meta.pagine;
+  btnSucc.addEventListener("click", () => caricaPost(userId, meta.pagina + 1));
+
+  contenitore.append(btnPrec, info, btnSucc);
 }
 
 async function caricaCommenti(postId) {
@@ -121,13 +148,16 @@ async function caricaCommenti(postId) {
 }
 
 async function aggiornaStatistiche() {
-  const [utenti, post, commenti] = await Promise.all([
+  const [utenti, postRisposta, commenti] = await Promise.all([
     api.ottieniUtenti(),
     api.ottieniPost(),
     api.ottieniCommenti(),
   ]);
+
+  const postTotale = postRisposta.meta?.totale ?? postRisposta.length;
+
   document.getElementById("statistiche").textContent =
-    `Utenti: ${utenti.length} | Post: ${post.length} | Commenti: ${commenti.length}`;
+    `Utenti: ${utenti.length} | Post: ${postTotale} | Commenti: ${commenti.length}`;
 }
 
 // ============================================================
@@ -149,7 +179,7 @@ async function vediPostDiUtente(utente) {
     });
 
   mostraSezione("post");
-  await caricaPost(utente.id);
+  await caricaPost(utente.id, 1);
 }
 
 async function vediCommentiDiPost(post) {
@@ -162,11 +192,11 @@ async function vediCommentiDiPost(post) {
     postSelezionato = null;
     mostraSezione("post");
     if (utenteSelezionato) {
-      await caricaPost(utenteSelezionato.id);
+      await caricaPost(utenteSelezionato.id, paginaAttuale);
     } else {
       breadcrumbs.post.innerHTML = "";
       titoli.post.textContent = "Post";
-      await caricaPost();
+      await caricaPost(undefined, paginaAttuale);
     }
   });
 
@@ -193,7 +223,7 @@ async function eliminaPost(id) {
   if (!confirm("Sei sicuro di voler eliminare questo post?")) return;
   try {
     await api.eliminaPost(id);
-    await caricaPost(utenteSelezionato?.id);
+    await caricaPost(utenteSelezionato?.id, 1);
     await aggiornaStatistiche();
   } catch (err) {
     ui.mostraErrore(err.message, liste.post);
@@ -220,10 +250,15 @@ document.getElementById("form-utente").addEventListener("submit", async (e) => {
   const nome = document.getElementById("utente-nome").value.trim();
   const email = document.getElementById("utente-email").value.trim();
   const citta = document.getElementById("utente-citta").value.trim();
-  const codiceFiscale = document.getElementById("utente-cf").value.trim().toUpperCase();
+  const codiceFiscale = document
+    .getElementById("utente-cf")
+    .value.trim()
+    .toUpperCase();
   const sesso = document.getElementById("utente-sesso").value;
-  const dataNascita = document.getElementById("utente-data-nascita").value || null;
-  const telefono = document.getElementById("utente-telefono").value.trim() || null;
+  const dataNascita =
+    document.getElementById("utente-data-nascita").value || null;
+  const telefono =
+    document.getElementById("utente-telefono").value.trim() || null;
 
   const regexCF = /^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/;
   if (!regexCF.test(codiceFiscale)) {
@@ -233,9 +268,25 @@ document.getElementById("form-utente").addEventListener("submit", async (e) => {
 
   try {
     if (utenteInModifica) {
-      await api.aggiornaUtente(utenteInModifica.id, { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono });
+      await api.aggiornaUtente(utenteInModifica.id, {
+        nome,
+        email,
+        citta,
+        codiceFiscale,
+        sesso,
+        dataNascita,
+        telefono,
+      });
     } else {
-      await api.creaUtente({ nome, email, citta, codiceFiscale, sesso, dataNascita, telefono });
+      await api.creaUtente({
+        nome,
+        email,
+        citta,
+        codiceFiscale,
+        sesso,
+        dataNascita,
+        telefono,
+      });
     }
     e.target.reset();
     resetFormUtente();
@@ -259,7 +310,7 @@ document.getElementById("form-post").addEventListener("submit", async (e) => {
     if (utenteSelezionato) {
       document.getElementById("post-userId").value = utenteSelezionato.id;
     }
-    await caricaPost(utenteSelezionato?.id);
+    await caricaPost(utenteSelezionato?.id, 1);
     await aggiornaStatistiche();
   } catch (err) {
     ui.mostraErrore(err.message, liste.post);
