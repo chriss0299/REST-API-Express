@@ -3,12 +3,12 @@
 -- Inserisce gli stessi dati che avevamo nel vecchio database.js.
 -- Viene eseguito automaticamente da Docker al primo avvio.
 
-INSERT INTO utenti (id, nome, email, citta, codiceFiscale, sesso, dataNascita, telefono) VALUES
-    (1, 'Mario Rossi',   'mario@email.com',  'Roma',    'RSSMRA80A01H501A', 'M',     '1980-01-01', '+39 06 1234567'),
-    (2, 'Luigi Verdi',   'luigi@email.com',  'Milano',  'VRDLGU75B02F205B', 'M',     '1975-02-02', '+39 02 7654321'),
-    (3, 'Peach Bianchi', 'peach@email.com',  'Napoli',  'BNCPCH90C03F839C', 'F',     '1990-03-03', '+39 081 9876543'),
-    (4, 'Toad Gialli',   'toad@email.com',   'Torino',  'GLLTDO85D04L219D', 'Altro', '1985-04-04', NULL),
-    (5, 'Bowser Neri',   'bowser@email.com', 'Firenze', 'NREBWS70E05D612E', 'M',     '1970-05-05', '+39 055 1122334');
+INSERT INTO utenti (id, nome, email, citta, codiceFiscale, sesso, dataNascita, telefono, password ,ruolo) VALUES
+    (1, 'Mario Rossi',   'mario@email.com',  'Roma',    'RSSMRA80A01H501A', 'M',     '1980-01-01', '+39 06 1234567','$2b$10$/eqEtOI6OiZhpa27DVsNb.aO//V.xtW6rvWZDVdbKNAra/pbI6idC','admin' ),
+    (2, 'Luigi Verdi',   'luigi@email.com',  'Milano',  'VRDLGU75B02F205B', 'M',     '1975-02-02', '+39 02 7654321','$2b$10$/eqEtOI6OiZhpa27DVsNb.aO//V.xtW6rvWZDVdbKNAra/pbI6idC','utente'),
+    (3, 'Peach Bianchi', 'peach@email.com',  'Napoli',  'BNCPCH90C03F839C', 'F',     '1990-03-03', '+39 081 9876543','$2b$10$/eqEtOI6OiZhpa27DVsNb.aO//V.xtW6rvWZDVdbKNAra/pbI6idC','utente'),
+    (4, 'Toad Gialli',   'toad@email.com',   'Torino',  'GLLTDO85D04L219D', 'Altro', '1985-04-04', NULL,'$2b$10$/eqEtOI6OiZhpa27DVsNb.aO//V.xtW6rvWZDVdbKNAra/pbI6idC','utente'),
+    (5, 'Bowser Neri',   'bowser@email.com', 'Firenze', 'NREBWS70E05D612E', 'M',     '1970-05-05', '+39 055 1122334','$2b$10$/eqEtOI6OiZhpa27DVsNb.aO//V.xtW6rvWZDVdbKNAra/pbI6idC','utente');
 
 INSERT INTO post (id, userId, titolo, corpo) VALUES
     (1, 1, 'Il mio primo post',          'Ciao a tutti! Questo è il mio primo post sulla piattaforma.'),

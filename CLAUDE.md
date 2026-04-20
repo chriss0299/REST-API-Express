@@ -9,6 +9,7 @@ Educational monorepo — a simplified Italian version of JSONPlaceholder for tea
 - **Frontend:** Plain HTML / CSS / vanilla JS (in `web/`)
 - **Database:** MySQL 8 via Docker (was: in-memory arrays)
 - **DB driver:** mysql2/promise (raw SQL, no ORM)
+- **Auth libs:** bcrypt (password hashing) + jsonwebtoken (JWT) — installed, not yet wired up
 - **Package manager:** npm
 
 ## Monorepo structure
@@ -21,7 +22,8 @@ mini-jsonplaceholder/
 ├── docs/
 │   ├── guida-setup-mysql.md       # Step-by-step setup guide (Italian)
 │   ├── cheatsheet-sql.md          # SQL reference for the project
-│   └── spiegazione-migrazione.md  # Why and how the migration from arrays to MySQL
+│   ├── spiegazione-migrazione.md  # Why and how the migration from arrays to MySQL
+│   └── esercizi.md                # Progressive exercises (7 total, ⭐–⭐⭐⭐)
 ├── api/                           # Backend — Express REST API
 │   ├── .env.example               # DB credentials template
 │   ├── .env                       # Actual credentials (gitignored)
@@ -134,6 +136,8 @@ All responses and field names are in Italian. Same contract as before the MySQL 
 - `guida-setup-mysql.md` — Docker setup, DB verification, env configuration, troubleshooting
 - `cheatsheet-sql.md` — SQL commands used in the project, parameterized queries, result types
 - `spiegazione-migrazione.md` — Array vs MySQL comparison, async/await, try/catch, connection pools, foreign keys
+- `esercizi.md` — 7 progressive exercises: schema extension, CF validation, edit form, search filter, stats counter, timestamps, pagination
+- `esercizioparte2.md` — 8 exercises on auth & security (Es. 8–15): bcrypt, JWT, middleware, roles, frontend login, refresh tokens, hardening
 
 ## Key notes
 

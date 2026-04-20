@@ -10,6 +10,7 @@
 //   risultato.affectedRows     → quante righe sono state modificate da UPDATE/DELETE
 
 import pool from "../connessione.js";
+import bcrypt, { hash } from "bcrypt";
 
 // ============================================================
 // SELECT — Lettura
@@ -24,13 +25,13 @@ import pool from "../connessione.js";
 export async function trovaUtenti(citta) {
   if (citta) {
     const [righe] = await pool.query(
-      "SELECT * FROM utenti WHERE LOWER(citta) = LOWER(?)",
+      "SELECT id, nome, email, citta FROM utenti WHERE citta = ?",
       [citta],
     );
     return righe;
   }
 
-  const [righe] = await pool.query("SELECT * FROM utenti");
+  const [righe] = await pool.query("SELECT id, nome, email, citta FROM utenti");
   return righe;
 }
 
@@ -41,8 +42,19 @@ export async function trovaUtenti(citta) {
  * SQL: SELECT * FROM utenti WHERE id = ?
  */
 export async function trovaUtentePerId(id) {
-  const [righe] = await pool.query("SELECT * FROM utenti WHERE id = ?", [id]);
+  const [righe] = await pool.query(
+    "SELECT id, nome, email, citta FROM utenti WHERE id = ?",
+    [id],
+  );
   return righe[0]; // undefined se non trovato
+}
+
+export async function trovaUtentePerEmail(email) {
+  const [righe] = await pool.query(
+    "SELECT id, nome, email, citta, ruolo, password From utenti  WHERE email = ?",
+    [email],
+  );
+  return righe[0];
 }
 
 // ============================================================
@@ -55,13 +67,40 @@ export async function trovaUtentePerId(id) {
  *
  * SQL: INSERT INTO utenti (nome, email, citta) VALUES (?, ?, ?)
  */
-export async function creaUtente({ nome, email, citta, codiceFiscale, sesso, dataNascita, telefono }) {
+export async function creaUtente({
+  nome,
+  email,
+  citta,
+  codiceFiscale,
+  sesso,
+  dataNascita,
+  telefono,
+  password,
+}) {
+  const hash = await bcrypt.hash(password, 10);
   const [risultato] = await pool.query(
-    "INSERT INTO utenti (nome, email, citta, codiceFiscale, sesso, dataNascita, telefono) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    [nome, email, citta || "", codiceFiscale, sesso, dataNascita || null, telefono || null],
+    "INSERT INTO utenti (nome, email, citta, codiceFiscale, sesso, dataNascita, telefono, password) VALUES (?, ?, ?, ?, ?, ?, ?,?)",
+    [
+      nome,
+      email,
+      citta || "",
+      codiceFiscale,
+      sesso,
+      dataNascita || null,
+      telefono || null,
+      hash,
+    ],
   );
-
-  return { id: risultato.insertId, nome, email, citta: citta || "", codiceFiscale, sesso, dataNascita: dataNascita || null, telefono: telefono || null };
+  return {
+    id: risultato.insertId,
+    nome,
+    email,
+    citta: citta || "",
+    codiceFiscale,
+    sesso,
+    dataNascita: dataNascita || null,
+    telefono: telefono || null,
+  };
 }
 
 // ============================================================
@@ -74,14 +113,35 @@ export async function creaUtente({ nome, email, citta, codiceFiscale, sesso, dat
  *
  * SQL: UPDATE utenti SET nome = ?, email = ?, citta = ? WHERE id = ?
  */
-export async function sostituisciUtente(id, { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono }) {
+export async function sostituisciUtente(
+  id,
+  { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono, password },
+) {
   const [risultato] = await pool.query(
-    "UPDATE utenti SET nome = ?, email = ?, citta = ?, codiceFiscale = ?, sesso = ?, dataNascita = ?, telefono = ? WHERE id = ?",
-    [nome, email, citta || "", codiceFiscale, sesso, dataNascita || null, telefono || null, id],
+    "UPDATE utenti SET nome = ?, email = ?, citta = ?, codiceFiscale = ?, sesso = ?, dataNascita = ?, telefono = ?,password = ? WHERE id = ?",
+    [
+      nome,
+      email,
+      citta || "",
+      codiceFiscale,
+      sesso,
+      dataNascita || null,
+      telefono || null,
+      id,
+    ],
   );
 
   if (risultato.affectedRows === 0) return null;
-  return { id, nome, email, citta: citta || "", codiceFiscale, sesso, dataNascita: dataNascita || null, telefono: telefono || null };
+  return {
+    id,
+    nome,
+    email,
+    citta: citta || "",
+    codiceFiscale,
+    sesso,
+    dataNascita: dataNascita || null,
+    telefono: telefono || null,
+  };
 }
 
 /**
@@ -91,7 +151,15 @@ export async function sostituisciUtente(id, { nome, email, citta, codiceFiscale,
  * SQL dinamico: UPDATE utenti SET <campo> = ?, ... WHERE id = ?
  */
 export async function aggiornaUtente(id, dati) {
-  const campiPermessi = ["nome", "email", "citta", "codiceFiscale", "sesso", "dataNascita", "telefono"];
+  const campiPermessi = [
+    "nome",
+    "email",
+    "citta",
+    "codiceFiscale",
+    "sesso",
+    "dataNascita",
+    "telefono",
+  ];
   const aggiornamenti = [];
   const valori = [];
 

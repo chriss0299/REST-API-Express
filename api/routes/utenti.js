@@ -73,16 +73,39 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono } =
-      req.body;
+    const {
+      nome,
+      email,
+      citta,
+      codiceFiscale,
+      sesso,
+      dataNascita,
+      telefono,
+      password,
+    } = req.body;
 
-    if (!nome || !email || !codiceFiscale || !sesso) {
+    if (!nome || !email || !codiceFiscale || !sesso || !password) {
       return res.status(400).json({
-        errore: "I campi 'nome', 'email', 'codiceFiscale' e 'sesso' sono obbligatori",
+        errore:
+          "I campi 'nome', 'email', 'codiceFiscale' , 'sesso' e 'password' sono obbligatori",
+      });
+    }
+    if (password.lenght < 8) {
+      return res.status(400).json({
+        errore: "la password non rispetta i criteri: min 8 caratteri",
       });
     }
 
-    const nuovoUtente = await creaUtente({ nome, email, citta, codiceFiscale, sesso, dataNascita, telefono });
+    const nuovoUtente = await creaUtente({
+      nome,
+      email,
+      citta,
+      codiceFiscale,
+      sesso,
+      dataNascita,
+      telefono,
+      password,
+    });
     res.status(201).json(nuovoUtente);
   } catch (errore) {
     console.error("Errore POST /api/utenti:", errore);
@@ -101,15 +124,25 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono } = req.body;
+    const { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono } =
+      req.body;
 
     if (!nome || !email || !codiceFiscale || !sesso) {
       return res.status(400).json({
-        errore: "I campi 'nome', 'email', 'codiceFiscale' e 'sesso' sono obbligatori",
+        errore:
+          "I campi 'nome', 'email', 'codiceFiscale' e 'sesso' sono obbligatori",
       });
     }
 
-    const aggiornato = await sostituisciUtente(id, { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono });
+    const aggiornato = await sostituisciUtente(id, {
+      nome,
+      email,
+      citta,
+      codiceFiscale,
+      sesso,
+      dataNascita,
+      telefono,
+    });
 
     if (!aggiornato) {
       return res.status(404).json({
