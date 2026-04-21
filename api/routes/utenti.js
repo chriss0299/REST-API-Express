@@ -14,6 +14,10 @@ import {
   aggiornaUtente,
   eliminaUtente,
 } from "../database/queries/utenti.js";
+import {
+  richiediAutenticazione,
+  richiediRuolo,
+} from "../middleware/autenticazione.js";
 
 const router = Router();
 
@@ -121,7 +125,7 @@ router.post("/", async (req, res) => {
 // Prima (array):    utenti[indice] = { id, nome, email, citta }
 // Adesso (MySQL):   UPDATE utenti SET nome=?, email=?, citta=? WHERE id=?
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", richiediAutenticazione, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { nome, email, citta, codiceFiscale, sesso, dataNascita, telefono } =
@@ -165,7 +169,7 @@ router.put("/:id", async (req, res) => {
 // Prima (array):    if (nome !== undefined) utente.nome = nome;
 // Adesso (MySQL):   UPDATE utenti SET <campo>=? WHERE id=? (query dinamica)
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", richiediAutenticazione, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { nome, email, citta } = req.body;
@@ -195,22 +199,27 @@ router.patch("/:id", async (req, res) => {
 // Nota: grazie a ON DELETE CASCADE, eliminando un utente
 // vengono eliminati automaticamente anche i suoi post e commenti.
 
-router.delete("/:id", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const rimosso = await eliminaUtente(id);
+router.delete(
+  "/:id",
+  richiediAutenticazione,
+  richiediRuolo("admin"),
+  async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const rimosso = await eliminaUtente(id);
 
-    if (!rimosso) {
-      return res.status(404).json({
-        errore: `Utente con id ${id} non trovato`,
-      });
+      if (!rimosso) {
+        return res.status(404).json({
+          errore: `Utente con id ${id} non trovato`,
+        });
+      }
+
+      res.json({ messaggio: "Utente eliminato", utente: rimosso });
+    } catch (errore) {
+      console.error("Errore DELETE /api/utenti/:id:", errore);
+      res.status(500).json({ errore: "Errore interno del server" });
     }
-
-    res.json({ messaggio: "Utente eliminato", utente: rimosso });
-  } catch (errore) {
-    console.error("Errore DELETE /api/utenti/:id:", errore);
-    res.status(500).json({ errore: "Errore interno del server" });
-  }
-});
+  },
+);
 
 export default router;

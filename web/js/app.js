@@ -104,10 +104,15 @@ async function caricaPost(userId, pagina = 1) {
   try {
     const risposta = await api.ottieniPost(userId, pagina, LIMITE_POST);
     const post = risposta.dati ?? risposta;
-    ui.mostraPost(post, liste.post, {
-      onVediCommenti: vediCommentiDiPost,
-      onElimina: eliminaPost,
-    });
+    ui.mostraPost(
+      post,
+      liste.post,
+      {
+        onVediCommenti: vediCommentiDiPost,
+        onElimina: eliminaPost,
+      },
+      getUtenteLoggato(),
+    );
     aggiornaPaginazione(risposta.meta, userId);
   } catch (err) {
     ui.mostraErrore(err.message, liste.post);
@@ -156,8 +161,11 @@ async function aggiornaStatistiche() {
 
   const postTotale = postRisposta.meta?.totale ?? postRisposta.length;
 
-  document.getElementById("statistiche").textContent =
-    `Utenti: ${utenti.length} | Post: ${postTotale} | Commenti: ${commenti.length}`;
+  document.getElementById("statistiche").innerHTML = `
+    <div class="stat-item"><span class="stat-num">${utenti.length}</span><span class="stat-label">Utenti</span></div>
+    <div class="stat-item"><span class="stat-num">${postTotale}</span><span class="stat-label">Post</span></div>
+    <div class="stat-item"><span class="stat-num">${commenti.length}</span><span class="stat-label">Commenti</span></div>
+  `;
 }
 
 // ============================================================
@@ -380,6 +388,45 @@ document
   .addEventListener("click", () => {
     resetFormUtente();
   });
+// ============================================================
+// Autenticazione — Login / Logout
+// ============================================================
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("utente");
+  aggiornaStatoLogin();
+  localStorage.removeItem("refreshToken");
+}
+
+function aggiornaStatoLogin() {
+  const utente = JSON.parse(localStorage.getItem("utente") || "null");
+  document.getElementById("stato-login").textContent = utente
+    ? `Loggato come ${utente.nome}`
+    : "Non sei autenticato";
+}
+document.getElementById("form-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+  try {
+    const { accessToken, refreshToken, utente } = await api.login(
+      email,
+      password,
+    );
+    localStorage.setItem("token", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("utente", JSON.stringify(utente));
+    aggiornaStatoLogin();
+  } catch (errore) {
+    alert("Login fallito: " + errore.message);
+  }
+});
+document.getElementById("btn-logout").addEventListener("click", logout);
+
+function getUtenteLoggato() {
+  const raw = localStorage.getItem("utente");
+  return raw ? JSON.parse(raw) : null;
+}
 
 // ============================================================
 // Avvio — Carica la lista utenti all'apertura

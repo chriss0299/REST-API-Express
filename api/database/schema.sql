@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS utenti (
     email   VARCHAR(100)  NOT NULL,
     citta     VARCHAR(100)  NOT NULL DEFAULT '',
     creatoIl  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    codiceFiscale	CHAR(16) NOT NULL,
-    sesso   ENUM('M','F','Altro') NOT NULL,
+    codiceFiscale	CHAR(16) DEFAULT NULL,
+    sesso   ENUM('M','F','Altro') DEFAULT NULL,
     dataNascita DATE DEFAULT NULL,
     telefono VARCHAR(20)  DEFAULT NULL,
     password VARCHAR(255) NOT NULL,
@@ -45,3 +45,11 @@ CREATE TABLE IF NOT EXISTS commenti (
     PRIMARY KEY (id),
     FOREIGN KEY (postId) REFERENCES post(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE refresh_token (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    utenteId INT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    scadenza DATETIME NOT NULL,
+    FOREIGN KEY (utenteId) REFERENCES utenti(id) ON DELETE CASCADE
+);

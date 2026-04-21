@@ -8,6 +8,8 @@ import routeUtenti from "./routes/utenti.js";
 import routePost from "./routes/post.js";
 import routeCommenti from "./routes/commenti.js";
 import routeregistrazione from "./routes/auth.js";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 const app = express();
 const PORT = 3000;
@@ -17,7 +19,14 @@ const PORT = 3000;
 // ============================================================
 
 // Permette le richieste cross-origin (necessario per il frontend su porta diversa)
-app.use(cors());
+app.use(helmet());
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  }),
+);
 
 // Parsa automaticamente il body JSON delle richieste
 app.use(express.json());
@@ -43,9 +52,17 @@ app.use((req, res, next) => {
 // E se definiamo router.get("/:id", ...)
 // l'endpoint completo sarà GET /api/utenti/:id
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { errore: "Troppi tentativi, riprova tra 15 minuti" },
+});
+
+app.use("/api/auth/login", loginLimiter);
 app.use("/api/utenti", routeUtenti);
 app.use("/api/post", routePost);
 app.use("/api/commenti", routeCommenti);
+app.use("/api/auth", routeregistrazione);
 
 // ============================================================
 // Route di benvenuto (home page)
@@ -63,7 +80,6 @@ app.get("/", (req, res) => {
       "Usa Thunder Client o la console del browser per testare le API",
   });
 });
-
 // ============================================================
 // Avvio del server
 // ============================================================

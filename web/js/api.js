@@ -9,19 +9,51 @@ const BASE_URL = "http://localhost:3000/api";
 // Helper privato — wrappa fetch con JSON e gestione errori
 // ============================================================
 
-async function chiamataApi(percorso, opzioni = {}) {
+async function tentaRefresh() {
+  const refreshToken = localStorage.getItem("refreshToken");
+  if (!refreshToken) return false;
+  try {
+    const risposta = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!risposta.ok) return false;
+    const { accessToken } = await risposta.json();
+    localStorage.setItem("token", accessToken);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function chiamataApi(percorso, opzioni = {}, tentativo = 1) {
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...opzioni.headers,
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const risposta = await fetch(`${BASE_URL}${percorso}`, {
-    headers: { "Content-Type": "application/json" },
     ...opzioni,
+    headers,
   });
 
-  const dati = await risposta.json();
-
-  if (!risposta.ok) {
-    throw new Error(dati.errore || "Errore sconosciuto");
+  if (risposta.status === 401 && tentativo === 1) {
+    const ok = await tentaRefresh();
+    if (ok) return chiamataApi(percorso, opzioni, 2);
   }
 
-  return dati;
+  if (!risposta.ok) throw new Error((await risposta.json()).errore);
+  return risposta.json();
+}
+
+export async function login(email, password) {
+  return chiamataApi("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
 }
 
 // ============================================================
