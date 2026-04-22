@@ -273,6 +273,7 @@ document.getElementById("form-utente").addEventListener("submit", async (e) => {
     ui.mostraErrore("Codice fiscale non valido", liste.utenti);
     return;
   }
+  const password = document.getElementById("utente-password").value.trim();
 
   try {
     if (utenteInModifica) {
@@ -284,6 +285,7 @@ document.getElementById("form-utente").addEventListener("submit", async (e) => {
         sesso,
         dataNascita,
         telefono,
+        password,
       });
     } else {
       await api.creaUtente({
@@ -294,6 +296,7 @@ document.getElementById("form-utente").addEventListener("submit", async (e) => {
         sesso,
         dataNascita,
         telefono,
+        password,
       });
     }
     e.target.reset();
