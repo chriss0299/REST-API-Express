@@ -1,0 +1,148 @@
+/* ── Variabili globali dark theme ───────────────────────────── */
+:root {
+  --bg-page: #1e1e2e;
+  --bg-card: #2a2a3e;
+  --bg-navbar: #121218;
+  --bg-input: #1a1a28;
+  --border: #3a3a52;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --primary: #6366f1;
+  --primary-hover: #5558e3;
+  --negative: #ef4444;
+  --positive: #10b981;
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Reset base ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ── Transizioni di pagina ──────────────────────────────────── */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ── Card custom ────────────────────────────────────────────── */
+.sp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Scrollbar dark ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: var(--bg-page); }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* ── Quasar overrides dark ──────────────────────────────────── */
+.q-drawer {
+  background: var(--bg-card) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+.q-header {
+  background: var(--bg-navbar) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.q-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-card) !important;
+}
+
+.q-input .q-field__control {
+  background: var(--bg-input) !important;
+}
+
+.q-dialog__inner > .q-card {
+  border-radius: 16px !important;
+}
+
+/* ── Badge ruolo ────────────────────────────────────────────── */
+.badge-admin {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-utente {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-secondary);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Stat box sidebar ───────────────────────────────────────── */
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Admin view banner ──────────────────────────────────────── */
+.admin-banner {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+}

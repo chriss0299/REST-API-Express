@@ -44,6 +44,8 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD:-password123}
       DB_NAME: ${MYSQL_DATABASE:-mini_jsonplaceholder}
       CORS_ORIGIN: http://localhost:8080
+      JWT_SECRET: ${JWT_SECRET:-supersecretkey_cambiami_in_produzione}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
     depends_on:
       - mysql
 

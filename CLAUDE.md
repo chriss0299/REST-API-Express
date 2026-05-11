@@ -1,15 +1,15 @@
-# Mini JSONPlaceholder
+# Mini JSONPlaceholder — SocialPlace
 
-Educational monorepo — a simplified Italian version of JSONPlaceholder for teaching backend/REST API concepts to students.
+Educational monorepo — a simplified Italian social platform for teaching backend/REST API concepts and modern frontend development to students.
 
 ## Stack
 
 - **Runtime:** Node.js (ES Modules)
 - **Backend:** Express 4 (in `api/`)
-- **Frontend:** Plain HTML / CSS / vanilla JS (in `web/`)
-- **Database:** MySQL 8 via Docker (was: in-memory arrays)
+- **Frontend:** Nuxt 4 + Quasar UI + Pinia (in `web/`)
+- **Database:** MySQL 8 via Docker
 - **DB driver:** mysql2/promise (raw SQL, no ORM)
-- **Auth libs:** bcrypt (password hashing) + jsonwebtoken (JWT) — installed, not yet wired up
+- **Auth:** bcrypt (password hashing) + jsonwebtoken (JWT) — fully wired up
 - **Package manager:** npm
 
 ## Monorepo structure
@@ -18,64 +18,95 @@ Educational monorepo — a simplified Italian version of JSONPlaceholder for tea
 mini-jsonplaceholder/
 ├── CLAUDE.md
 ├── .gitignore
-├── docker-compose.yml             # MySQL 8 container, auto-seeds on first run
+├── docker-compose.yml             # 4 services: mysql, phpmyadmin, api, web
 ├── docs/
-│   ├── guida-setup-mysql.md       # Step-by-step setup guide (Italian)
-│   ├── cheatsheet-sql.md          # SQL reference for the project
-│   ├── spiegazione-migrazione.md  # Why and how the migration from arrays to MySQL
-│   └── esercizi.md                # Progressive exercises (7 total, ⭐–⭐⭐⭐)
+│   ├── guida-setup-mysql.md
+│   ├── cheatsheet-sql.md
+│   ├── spiegazione-migrazione.md
+│   ├── esercizi.md                # Exercises 1–7 (⭐–⭐⭐⭐)
+│   └── esercizioparte2.md         # Exercises 8–15 (auth & security)
 ├── api/                           # Backend — Express REST API
-│   ├── .env.example               # DB credentials template
-│   ├── .env                       # Actual credentials (gitignored)
-│   ├── server.js                  # Entry point — dotenv, cors, routes, logger, :3000
+│   ├── .env.example
+│   ├── .env                       # gitignored
+│   ├── .dockerignore
+│   ├── server.js                  # Entry point — helmet, cors, rate-limit, routes, :3000
+│   ├── scripts/
+│   │   └── genera-hash.js         # bcrypt hash generator for seed passwords
 │   ├── data/
-│   │   └── database.vecchio.js    # Old in-memory DB (kept as reference for students)
+│   │   └── database.vecchio.js    # Old in-memory DB (reference for students)
 │   ├── database/
 │   │   ├── connessione.js         # mysql2 connection pool
-│   │   ├── schema.sql             # CREATE TABLE statements (auto-run by Docker)
+│   │   ├── schema.sql             # CREATE TABLE (auto-run by Docker)
 │   │   ├── seed.sql               # INSERT seed data (auto-run by Docker)
 │   │   └── queries/
-│   │       ├── utenti.js          # Async SQL functions for utenti
-│   │       ├── post.js            # Async SQL functions for post
-│   │       └── commenti.js        # Async SQL functions for commenti
+│   │       ├── utenti.js
+│   │       ├── post.js
+│   │       ├── commenti.js
+│   │       └── refreshToken.js    # salvaRefreshToken, trovaRefreshToken, eliminaRefreshToken
 │   ├── routes/
-│   │   ├── utenti.js              # /api/utenti — CRUD (async, uses queries/)
-│   │   ├── post.js                # /api/post — CRUD (async, uses queries/)
-│   │   └── commenti.js            # /api/commenti — CRUD (async, uses queries/)
+│   │   ├── utenti.js
+│   │   ├── post.js
+│   │   ├── commenti.js
+│   │   └── auth.js                # /registrazione, /login, /refresh, /logout
 │   └── package.json
-└── web/                           # Frontend — plain HTML/CSS/JS (unchanged)
-    ├── index.html
-    ├── stile.css
-    ├── js/
-    │   ├── api.js
-    │   ├── ui.js
-    │   └── app.js
-    └── package.json
+└── web/                           # Frontend — Nuxt 4 + Quasar UI
+    ├── Dockerfile                 # Multi-stage: nuxt generate → nginx:alpine
+    ├── nginx.conf                 # SPA routing + absolute_redirect off
+    ├── nuxt.config.ts
+    ├── package.json
+    ├── .dockerignore
+    └── app/                       # Nuxt 4 app directory (compatibilityVersion: 4)
+        ├── app.vue                # Root: q-layout with left/right drawers + LoginDialog
+        ├── error.vue
+        ├── pages/
+        │   ├── index.vue
+        │   ├── utenti/index.vue
+        │   ├── post/index.vue
+        │   └── commenti/index.vue
+        ├── components/            # pathPrefix: false — no subdirectory prefix in template
+        │   ├── auth/LoginDialog.vue
+        │   ├── layout/AppNavbar.vue, AppSidebar.vue, AppSidebarInfo.vue
+        │   ├── ui/UserAvatar.vue, AppBreadcrumb.vue, ConfirmDialog.vue
+        │   ├── utenti/UserCard.vue, UserGrid.vue, UserForm.vue
+        │   ├── post/PostCard.vue, PostList.vue, PostForm.vue
+        │   └── commenti/CommentoCard.vue, CommentoList.vue, CommentoForm.vue
+        ├── stores/                # Pinia stores
+        │   ├── auth.ts
+        │   ├── utenti.ts, post.ts, commenti.ts
+        │   └── statistiche.ts
+        ├── composables/
+        │   ├── useApi.ts          # fetch wrapper for all API calls
+        │   ├── useAuth.ts, useToast.ts, useAvatar.ts, useConfirm.ts
+        ├── plugins/
+        │   └── auth.client.ts     # restores auth state from localStorage on startup
+        └── types/
+            └── index.ts
 ```
 
 ## Commands
 
 ```bash
-# Database + phpMyAdmin (from project root)
-docker compose up -d       # Start MySQL + phpMyAdmin containers
-docker compose down        # Stop all containers
-docker compose down -v     # Stop + delete all data (re-seeds on next start)
+# Full Docker stack (recommended — builds and starts all 4 services)
+docker compose up --build -d   # first run or after code changes
+docker compose up -d            # subsequent runs (no rebuild)
+docker compose down             # stop all
+docker compose down -v          # stop + delete DB data (re-seeds on next start)
+docker compose restart api      # restart API only (e.g. to reset rate limiter)
 
-# Backend
-cd api
-npm install
-npm run dev                # node --watch server.js (auto-restart on changes)
+# Development mode (run outside Docker)
+cd api && npm install && npm run dev      # API on :3000 (node --watch)
+cd web && npm install && npm run dev      # Frontend on :8080 (nuxt dev)
 
-# Frontend
-cd web
-npm run dev                # serve -l 8080
+# Web build commands
+cd web && npm run generate    # static output → .output/public (used by Docker)
+cd web && npm run build       # Nitro server build (NOT used for Docker/nginx)
 ```
 
-Backend runs on `http://localhost:3000`. Frontend runs on `http://localhost:8080`. phpMyAdmin runs on `http://localhost:8081`. CORS is enabled.
+Services: API `:3000` · Frontend `:8080` · phpMyAdmin `:8081`
 
 ## API endpoints
 
-All responses and field names are in Italian. Same contract as before the MySQL migration.
+All responses and field names are in Italian.
 
 ### Utenti (`/api/utenti`)
 - Fields: `id`, `nome`, `email`, `citta`
@@ -104,45 +135,61 @@ All responses and field names are in Italian. Same contract as before the MySQL 
 - PATCH `/:id` — partial update
 - DELETE `/:id`
 
+### Auth (`/api/auth`)
+- POST `/registrazione` — required: `nome`, `email`, `password` (min 8 chars); optional: `citta` → returns `{ token, utente }`
+- POST `/login` — required: `email`, `password` → returns `{ accessToken, refreshToken, utente }` — **rate limited: 5 attempts / 15 min**
+- POST `/refresh` — required: `{ refreshToken }` → returns `{ accessToken }`
+- POST `/logout` — required: `{ refreshToken }` → deletes refresh token
+
+Seed test user: `mario@email.com` / `password123`
+
 ## Backend architecture
 
-- **`database/connessione.js`** — creates a mysql2 connection pool from `.env` variables
-- **`database/queries/*.js`** — one module per entity, exports async functions (e.g., `trovaUtenti`, `creaUtente`, `eliminaUtente`). All use parameterized queries (`?` placeholders) to prevent SQL injection
-- **`routes/*.js`** — async Express handlers with try/catch. Import from queries/, validate input, return JSON responses
-- **`database/schema.sql`** + **`seed.sql`** — auto-executed by Docker on first container creation via `/docker-entrypoint-initdb.d/`
+- **`server.js`** — helmet, cors (from `CORS_ORIGIN` env), express.json, rate-limiter on `/api/auth/login`, routes
+- **`database/connessione.js`** — mysql2 pool from `.env` variables
+- **`database/queries/*.js`** — async functions with parameterized `?` queries
+- **`routes/auth.js`** — bcrypt.compare for login, jwt.sign with `JWT_SECRET` + `JWT_EXPIRES_IN` env vars, crypto.randomUUID for refresh tokens (7-day expiry)
+- **`database/schema.sql`** + **`seed.sql`** — auto-executed by Docker via `/docker-entrypoint-initdb.d/`
 
-## Frontend architecture
+## Frontend architecture (Nuxt 4)
 
-- **No build tools, no frameworks** — plain HTML/CSS/JS with ES Modules
-- **Navigation:** 3 `<section>` elements toggled via `.nascosta` CSS class
-- **Drill-down:** click user → filtered posts → click post → filtered comments (with breadcrumbs)
-- **JS modules:**
-  - `api.js` — fetch wrapper with `BASE_URL`, one exported function per API call
-  - `ui.js` — rendering functions that take data + container + callbacks, build DOM with template literals
-  - `app.js` — orchestrator: imports api + ui, handles nav/forms/delete/drill-down state
+- **`nuxt.config.ts`** — `compatibilityVersion: 4`, `ssr: false`, `pathPrefix: false` for components
+- **`app/app.vue`** — `<q-layout>` with left sidebar (drawer), right info panel, `<NuxtPage />` in page-container, `<LoginDialog />` always mounted
+- **`app/pages/`** — file-based routing via Nuxt; each page imports stores
+- **`app/stores/`** — Pinia stores; `auth.ts` holds `{ utente, accessToken, refreshToken }`
+- **`app/composables/useApi.ts`** — fetch wrapper using `useRuntimeConfig().public.apiBase`
+- **`app/plugins/auth.client.ts`** — runs on client startup, restores auth from localStorage
+- **Build for Docker:** `nuxt generate` → `.output/public/` (static SPA), served by nginx
+
+## Docker / deployment notes
+
+- `nuxt generate` (NOT `nuxt build`) produces the static `index.html` that nginx serves
+- `nginx.conf` has `absolute_redirect off` — prevents nginx from dropping the proxy port in redirects
+- `components: [{ path: '~/components', pathPrefix: false }]` in nuxt.config.ts — components in subdirectories are imported without the directory name prefix (e.g. `<UserCard>` not `<UtentiUserCard>`)
+- `JWT_SECRET` and `JWT_EXPIRES_IN` must be in docker-compose.yml under the `api` service environment — without them jwt.sign throws and login returns 500
+- Rate limiter resets on container restart: `docker compose restart api`
 
 ## Conventions
 
-- Error responses use `{ "errore": "..." }` (Italian)
-- Successful DELETE returns `{ "messaggio": "... eliminato", "<risorsa>": { ... } }`
-- POST returns `201`; validation errors return `400`; not found returns `404`; DB errors return `500`
-- IDs are auto-generated by MySQL (AUTO_INCREMENT)
-- MySQL column names match JSON field names exactly — no aliasing needed
-- Foreign keys: `post.userId → utenti.id`, `commenti.postId → post.id` (both ON DELETE CASCADE)
-- DB credentials live in `api/.env` (gitignored), template in `api/.env.example`
+- Error responses: `{ "errore": "..." }`
+- Successful DELETE: `{ "messaggio": "... eliminato", "<risorsa>": { ... } }`
+- POST → `201`; validation error → `400`; not found → `404`; DB error → `500`
+- IDs auto-generated by MySQL (AUTO_INCREMENT)
+- MySQL column names match JSON field names — no aliasing
+- Foreign keys: `post.userId → utenti.id`, `commenti.postId → post.id` (ON DELETE CASCADE)
+- `refresh_token` table in schema.sql: `id`, `utenteId`, `token`, `scadenza`
 
 ## Documentation (docs/)
 
 - `guida-setup-mysql.md` — Docker setup, DB verification, env configuration, troubleshooting
-- `cheatsheet-sql.md` — SQL commands used in the project, parameterized queries, result types
-- `spiegazione-migrazione.md` — Array vs MySQL comparison, async/await, try/catch, connection pools, foreign keys
-- `esercizi.md` — 7 progressive exercises: schema extension, CF validation, edit form, search filter, stats counter, timestamps, pagination
-- `esercizioparte2.md` — 8 exercises on auth & security (Es. 8–15): bcrypt, JWT, middleware, roles, frontend login, refresh tokens, hardening
+- `cheatsheet-sql.md` — SQL commands used in the project, parameterized queries
+- `spiegazione-migrazione.md` — Array vs MySQL comparison, async/await, connection pools
+- `esercizi.md` — 7 exercises: schema extension, CF validation, edit form, search, stats, timestamps, pagination
+- `esercizioparte2.md` — 8 auth & security exercises (Es. 8–15): bcrypt, JWT, middleware, roles, frontend login, refresh tokens, hardening
 
 ## Key notes
 
-- `api/data/database.vecchio.js` is the old in-memory approach — kept as reference for students to compare
-- Data persists across server restarts (stored in MySQL Docker volume)
-- To reset data: `docker compose down -v && docker compose up -d`
-- The project language (comments, field names, error messages) is Italian
-- CORS is enabled in `api/server.js` via the `cors` npm package
+- `api/data/database.vecchio.js` — old in-memory approach, kept for student comparison
+- Data persists in MySQL Docker volume; to reset: `docker compose down -v && docker compose up -d`
+- Project language (comments, field names, errors) is Italian
+- CORS origin is set from `CORS_ORIGIN` env var (docker-compose sets it to `http://localhost:8080`)

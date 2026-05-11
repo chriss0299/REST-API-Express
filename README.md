@@ -1,6 +1,6 @@
-# Mini JSONPlaceholder
+# SocialPlace — Mini JSONPlaceholder
 
-A simplified, educational REST API inspired by [JSONPlaceholder](https://jsonplaceholder.typicode.com/), built to teach backend development and REST API concepts. The project is written in Italian (field names, error messages, documentation), but this README is in English for broader accessibility.
+A simplified, educational social platform inspired by [JSONPlaceholder](https://jsonplaceholder.typicode.com/), built to teach REST API design, MySQL, authentication, and modern frontend development. The project is written in Italian (field names, error messages, documentation).
 
 ## Tech Stack
 
@@ -8,93 +8,97 @@ A simplified, educational REST API inspired by [JSONPlaceholder](https://jsonpla
 |-------|------------|
 | Runtime | Node.js (ES Modules) |
 | Backend | Express 4 |
-| Frontend | Plain HTML / CSS / Vanilla JS |
+| Frontend | Nuxt 4 + Quasar UI + Pinia |
 | Database | MySQL 8 (via Docker) |
 | DB Driver | mysql2/promise — raw SQL, no ORM |
-| Auth | bcrypt + jsonwebtoken (installed, not yet wired) |
+| Auth | bcrypt + jsonwebtoken (fully wired) |
+| Serving | nginx (static SPA via `nuxt generate`) |
 | Package Manager | npm |
 
 ## Folder Structure
 
 ```
 mini-jsonplaceholder/
-├── docker-compose.yml          # MySQL 8 + phpMyAdmin, auto-seeds on first run
+├── docker-compose.yml          # 4 services: mysql, phpmyadmin, api, web
 ├── docs/
-│   ├── guida-setup-mysql.md    # Step-by-step setup guide
+│   ├── guida-setup-mysql.md    # Step-by-step Docker/DB setup guide
 │   ├── cheatsheet-sql.md       # SQL reference for the project
 │   ├── spiegazione-migrazione.md  # Array-to-MySQL migration explained
 │   ├── esercizi.md             # 7 progressive exercises (⭐ to ⭐⭐⭐)
 │   └── esercizioparte2.md      # 8 auth & security exercises (bcrypt, JWT, roles)
 ├── api/                        # Express REST API
-│   ├── server.js               # Entry point — CORS, routes, logger, port 3000
-│   ├── .env.example            # DB credentials template
-│   ├── data/
-│   │   └── database.vecchio.js # Legacy in-memory DB (kept for reference)
+│   ├── server.js               # Entry — helmet, CORS, rate-limit, routes, :3000
+│   ├── .env.example            # DB/JWT credentials template
 │   ├── database/
 │   │   ├── connessione.js      # mysql2 connection pool
-│   │   ├── schema.sql          # CREATE TABLE statements (auto-run by Docker)
+│   │   ├── schema.sql          # CREATE TABLE (auto-run by Docker)
 │   │   ├── seed.sql            # Seed data (auto-run by Docker)
-│   │   └── queries/
-│   │       ├── utenti.js       # Async SQL functions for users
-│   │       ├── post.js         # Async SQL functions for posts
-│   │       └── commenti.js     # Async SQL functions for comments
+│   │   └── queries/            # Async SQL functions per entity
 │   └── routes/
 │       ├── utenti.js           # /api/utenti — CRUD
 │       ├── post.js             # /api/post — CRUD
-│       └── commenti.js         # /api/commenti — CRUD
-└── web/                        # Frontend — no build tools, no frameworks
-    ├── index.html
-    ├── stile.css
-    └── js/
-        ├── api.js              # Fetch wrapper with BASE_URL
-        ├── ui.js               # DOM rendering functions
-        └── app.js              # Orchestrator: nav, forms, drill-down state
+│       ├── commenti.js         # /api/commenti — CRUD
+│       └── auth.js             # /api/auth — login, registrazione, refresh, logout
+└── web/                        # Nuxt 4 + Quasar UI frontend
+    ├── Dockerfile              # nuxt generate → nginx:alpine
+    ├── nginx.conf              # SPA routing
+    ├── nuxt.config.ts
+    └── app/
+        ├── app.vue             # Root layout (drawers, LoginDialog)
+        ├── pages/              # File-based routing
+        ├── components/         # Quasar + custom components
+        ├── stores/             # Pinia state (auth, utenti, post, commenti)
+        ├── composables/        # useApi, useAuth, useToast, ...
+        └── plugins/            # auth.client.ts — restores session on load
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Docker](https://www.docker.com/) — for MySQL and phpMyAdmin
-- [Node.js](https://nodejs.org/) v18+
+- [Docker](https://www.docker.com/) with Docker Compose
 
-### 1. Start the database
-
-```bash
-# From the project root
-docker compose up -d
-```
-
-On first run, Docker automatically executes `schema.sql` and `seed.sql` to create and populate the database.
-
-### 2. Start the backend
+### Start everything with Docker
 
 ```bash
-cd api
-cp .env.example .env   # fill in your DB credentials
-npm install
-npm run dev            # starts with auto-restart (node --watch)
+# From the project root — builds and starts all 4 services
+docker compose up --build -d
 ```
 
-### 3. Start the frontend
-
-```bash
-cd web
-npm run dev            # serves on port 8080
-```
-
-### Services
+On first run, Docker automatically runs `schema.sql` and `seed.sql`.
 
 | Service | URL |
 |---------|-----|
-| REST API | http://localhost:3000 |
 | Frontend | http://localhost:8080 |
+| REST API | http://localhost:3000 |
 | phpMyAdmin | http://localhost:8081 |
+
+### Test login
+
+```
+Email:    mario@email.com
+Password: password123
+```
 
 ### Reset data
 
 ```bash
 docker compose down -v && docker compose up -d
+```
+
+### Development mode (outside Docker)
+
+```bash
+# Terminal 1 — API
+cd api
+cp .env.example .env   # fill in DB credentials and JWT_SECRET
+npm install
+npm run dev            # :3000, auto-restarts on changes
+
+# Terminal 2 — Frontend
+cd web
+npm install
+npm run dev            # :8080, hot-reload
 ```
 
 ## API Endpoints
@@ -107,12 +111,12 @@ All field names and responses are in Italian.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/utenti` | List all users. Filter: `?citta=Roma` |
-| GET | `/api/utenti/:id` | Get a single user |
-| POST | `/api/utenti` | Create user — required: `nome`, `email`; optional: `citta` |
+| GET | `/api/utenti` | List all. Filter: `?citta=Roma` |
+| GET | `/api/utenti/:id` | Get one |
+| POST | `/api/utenti` | Create — required: `nome`, `email`; optional: `citta` |
 | PUT | `/api/utenti/:id` | Full update — required: `nome`, `email` |
 | PATCH | `/api/utenti/:id` | Partial update |
-| DELETE | `/api/utenti/:id` | Delete user (cascades to posts and comments) |
+| DELETE | `/api/utenti/:id` | Delete (cascades to posts and comments) |
 
 ### Posts — `/api/post`
 
@@ -120,12 +124,12 @@ All field names and responses are in Italian.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/post` | List all posts. Filter: `?userId=1` |
-| GET | `/api/post/:id` | Get a single post |
-| POST | `/api/post` | Create post — required: `userId`, `titolo`, `corpo` |
+| GET | `/api/post` | List all. Filter: `?userId=1` |
+| GET | `/api/post/:id` | Get one |
+| POST | `/api/post` | Create — required: `userId`, `titolo`, `corpo` |
 | PUT | `/api/post/:id` | Full update |
 | PATCH | `/api/post/:id` | Partial update |
-| DELETE | `/api/post/:id` | Delete post (cascades to comments) |
+| DELETE | `/api/post/:id` | Delete (cascades to comments) |
 
 ### Comments — `/api/commenti`
 
@@ -133,12 +137,21 @@ All field names and responses are in Italian.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/commenti` | List all comments. Filter: `?postId=4` |
-| GET | `/api/commenti/:id` | Get a single comment |
-| POST | `/api/commenti` | Create comment — required: `postId`, `nome`, `email`, `corpo` |
+| GET | `/api/commenti` | List all. Filter: `?postId=4` |
+| GET | `/api/commenti/:id` | Get one |
+| POST | `/api/commenti` | Create — required: `postId`, `nome`, `email`, `corpo` |
 | PUT | `/api/commenti/:id` | Full update |
 | PATCH | `/api/commenti/:id` | Partial update |
-| DELETE | `/api/commenti/:id` | Delete comment |
+| DELETE | `/api/commenti/:id` | Delete |
+
+### Auth — `/api/auth`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/registrazione` | Register — required: `nome`, `email`, `password` (≥8 chars) |
+| POST | `/api/auth/login` | Login — returns `accessToken` + `refreshToken` · **rate limit: 5/15 min** |
+| POST | `/api/auth/refresh` | Get new access token — body: `{ refreshToken }` |
+| POST | `/api/auth/logout` | Invalidate refresh token — body: `{ refreshToken }` |
 
 ### Response conventions
 
@@ -148,6 +161,9 @@ All field names and responses are in Italian.
 
 // Successful DELETE
 { "messaggio": "risorsa eliminata", "risorsa": { /* deleted object */ } }
+
+// Login success
+{ "accessToken": "...", "refreshToken": "...", "utente": { "id", "nome", "email", "ruolo" } }
 ```
 
 | Scenario | HTTP Status |
@@ -155,16 +171,38 @@ All field names and responses are in Italian.
 | Created | `201` |
 | Validation error | `400` |
 | Not found | `404` |
+| Unauthorized | `401` |
+| Conflict (email exists) | `409` |
+| Too many login attempts | `429` |
 | Database error | `500` |
 
 ## Architecture
 
+### Backend
+
 ```
-routes/*.js          → validate input, call query functions, return JSON
-  └─ database/queries/*.js  → parameterized SQL (no ORM, no SQL injection)
-       └─ database/connessione.js  → mysql2 connection pool (.env credentials)
+routes/*.js              → validate input, call query functions, return JSON
+  └─ database/queries/   → parameterized SQL (? placeholders, no SQL injection)
+       └─ connessione.js → mysql2 pool (.env credentials)
 ```
 
-- All queries use `?` placeholders — SQL injection is not possible
-- Route handlers are `async/await` with `try/catch`
-- Foreign keys use `ON DELETE CASCADE`: deleting a user removes their posts and comments automatically
+- All queries use `?` placeholders
+- Handlers are `async/await` with `try/catch`
+- Foreign keys use `ON DELETE CASCADE`
+- Login is rate-limited (express-rate-limit): 5 attempts per 15 minutes
+- Passwords hashed with bcrypt (cost factor 10)
+- JWTs signed with `JWT_SECRET` env var; refresh tokens stored in `refresh_token` table (7-day expiry)
+
+### Frontend (Nuxt 4)
+
+```
+app/plugins/auth.client.ts   → restore session from localStorage on startup
+app/stores/auth.ts           → Pinia store: utente, accessToken, refreshToken
+app/composables/useApi.ts    → fetch wrapper hitting runtimeConfig.public.apiBase
+app/pages/                   → file-based routes: /, /utenti, /post, /commenti
+app/components/              → Quasar + custom UI components (pathPrefix: false)
+```
+
+- Static SPA built with `nuxt generate`, served by nginx
+- `ssr: false` — fully client-side
+- Dark theme with Quasar brand colors (purple/indigo palette)
